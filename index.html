@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>MediScribe - Live Consultation</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#f1f5f9;color:#1e293b;font-size:14px}
+button{cursor:pointer;border:none;outline:none}
+input,select,textarea{outline:none;font-family:inherit;font-size:14px}
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:3px}
+
+/* HEADER */
+.header{background:#fff;border-bottom:1px solid #e2e8f0;padding:10px 24px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.header-brand{display:flex;align-items:center;gap:12px}
+.header-logo{width:36px;height:36px;background:#1d4ed8;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:16px}
+.header-title{font-weight:700;color:#0f172a;font-size:15px}
+.header-sub{font-size:11px;color:#94a3b8;margin-top:1px}
+.header-right{display:flex;align-items:center;gap:24px}
+.header-doctor{font-size:13px}
+.header-queue{font-size:13px;color:#475569}
+.header-queue b{color:#0f172a}
+.avatar{width:36px;height:36px;background:#e2e8f0;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:600;color:#475569;font-size:13px}
+
+/* TOOLBAR */
+.toolbar{background:#fff;border-bottom:1px solid #e2e8f0;padding:10px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:20}
+.toolbar-left{display:flex;align-items:center;gap:12px}
+.rec-indicator{display:flex;align-items:center;gap:6px}
+.rec-dot{width:12px;height:12px;border-radius:50%;background:#cbd5e1}
+.rec-dot.recording{background:#ef4444;animation:pulse-rec 1.5s ease-in-out infinite}
+.rec-dot.paused{background:#f59e0b}
+@keyframes pulse-rec{0%,100%{opacity:1}50%{opacity:.3}}
+.rec-label{font-size:12px;font-weight:600;color:#94a3b8}
+.rec-label.recording{color:#dc2626}
+.rec-label.paused{color:#d97706}
+.timer{font-size:16px;font-weight:700;font-family:monospace;color:#0f172a}
+.mic-bars{display:flex;align-items:flex-end;height:24px;gap:1px;opacity:.3;transition:opacity .2s}
+.mic-bars.active{opacity:1}
+.mic-bar{display:inline-block;width:3px;background:#10b981;border-radius:2px;transition:height .08s}
+.lang-select{font-size:12px;border:1px solid #e2e8f0;border-radius:6px;padding:4px 8px;background:#fff;color:#475569}
+.toolbar-right{display:flex;gap:8px}
+.btn{padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;transition:background .15s}
+.btn-red{background:#dc2626;color:#fff}.btn-red:hover{background:#b91c1c}
+.btn-slate{background:#f1f5f9;color:#475569}.btn-slate:hover{background:#e2e8f0}
+.btn-dark{background:#334155;color:#fff}.btn-dark:hover{background:#1e293b}
+.btn-green{background:#16a34a;color:#fff}.btn-green:hover{background:#15803d}
+.btn-blue{background:#1d4ed8;color:#fff}.btn-blue:hover{background:#1e40af}
+.hidden{display:none!important}
+
+/* WARN BANNER */
+.warn-banner{background:#fef3c7;border-bottom:1px solid #fcd34d;color:#92400e;padding:8px 24px;font-size:13px;text-align:center}
+
+/* MAIN GRID */
+.main{display:grid;grid-template-columns:280px 1fr 320px;gap:12px;padding:12px;height:calc(100vh - 110px);overflow:hidden}
+
+/* SIDEBAR */
+.sidebar{background:#fff;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,.06);overflow-y:auto;display:flex;flex-direction:column}
+.sidebar-section{padding:14px;border-bottom:1px solid #f1f5f9}
+.sidebar-section:last-child{border-bottom:none}
+.patient-header{display:flex;align-items:center;gap:12px}
+.patient-avatar{width:52px;height:52px;background:linear-gradient(135deg,#3b82f6,#6366f1);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:18px;flex-shrink:0}
+.patient-name{font-weight:700;color:#0f172a;font-size:15px}
+.patient-meta{font-size:11px;color:#94a3b8;margin-top:2px}
+.patient-ids{margin-top:10px;display:flex;flex-direction:column;gap:4px}
+.patient-id-row{display:flex;justify-content:space-between;font-size:11px}
+.patient-id-row span:first-child{color:#94a3b8}
+.patient-id-row span:last-child{font-family:monospace;font-weight:600}
+.section-label{font-size:10px;font-weight:700;text-transform:uppercase;color:#94a3b8;letter-spacing:.05em;margin-bottom:8px}
+.vitals-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.vital-chip{border-radius:6px;padding:7px 9px;background:#f8fafc}
+.vital-chip.warn{background:#fef2f2}
+.vital-chip-label{font-size:10px;color:#64748b}
+.vital-chip-label.warn{color:#dc2626}
+.vital-chip-val{font-weight:700;font-size:13px;margin-top:2px}
+.allergy-box{background:#fef2f2;border-radius:8px;padding:10px 14px}
+.allergy-label{font-size:10px;font-weight:700;text-transform:uppercase;color:#dc2626;margin-bottom:4px}
+.allergy-text{font-size:12px;color:#7f1d1d}
+.cond-row{display:flex;justify-content:space-between;align-items:center;font-size:12px;padding:3px 0}
+.icd-code{font-family:monospace;color:#94a3b8;font-size:11px}
+.med-chip{background:#f8fafc;border-radius:6px;padding:7px 10px;margin-bottom:4px}
+.med-chip-name{font-weight:600;font-size:12px}
+.med-chip-sub{font-size:11px;color:#94a3b8;margin-top:2px}
+.visit-item{border-left:2px solid #3b82f6;padding-left:8px;margin-bottom:8px}
+.visit-item.old{border-color:#cbd5e1}
+.visit-title{font-weight:600;font-size:12px}
+.visit-note{font-size:11px;color:#94a3b8}
+
+/* CENTER PANEL */
+.center{background:#fff;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,.06);display:flex;flex-direction:column;overflow:hidden}
+.tabs{border-bottom:1px solid #e2e8f0;display:flex}
+.tab{padding:12px 20px;font-size:13px;background:none;border:none;color:#94a3b8;cursor:pointer;border-bottom:2px solid transparent;font-weight:500}
+.tab:hover{color:#475569}
+.tab.active{border-bottom-color:#1d4ed8;color:#1d4ed8;font-weight:600}
+.tab-spacer{flex:1}
+.asr-status{padding:0 16px;font-size:11px;color:#94a3b8;display:flex;align-items:center;gap:6px}
+.asr-dot{width:8px;height:8px;border-radius:50%;background:#cbd5e1}
+.insight-badge{margin-left:4px;background:#dbeafe;color:#1d4ed8;padding:1px 6px;border-radius:999px;font-size:11px;font-weight:600}
+.pane{flex:1;overflow-y:auto;padding:18px}
+
+/* TRANSCRIPT */
+.empty-state{text-align:center;color:#94a3b8;padding:48px 20px}
+.empty-icon{font-size:40px;margin-bottom:10px}
+.empty-title{font-weight:600;color:#64748b;font-size:14px;margin-bottom:4px}
+.empty-tips{margin-top:12px;display:flex;flex-direction:column;gap:6px}
+.tip-chip{background:#f1f5f9;border-radius:6px;padding:5px 12px;font-size:12px;display:inline-block}
+.seg{display:flex;gap:10px;margin-bottom:14px;animation:fadeIn .25s ease-out}
+.seg-ts{font-size:11px;font-family:monospace;color:#94a3b8;width:38px;flex-shrink:0;padding-top:2px}
+.seg-body .speaker{font-size:11px;font-weight:600;color:#2563eb;margin-bottom:2px}
+.seg-body .text{line-height:1.6}
+.interim{color:#94a3b8;font-style:italic}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+
+/* ENTITY HIGHLIGHTING */
+.ent-sym{background:#fff1e6;color:#c2410c;padding:1px 5px;border-radius:4px;font-weight:500}
+.ent-vit{background:#e0f2fe;color:#0369a1;padding:1px 5px;border-radius:4px;font-weight:500}
+.ent-med{background:#dcfce7;color:#166534;padding:1px 5px;border-radius:4px;font-weight:500}
+.ent-anat{background:#f3e8ff;color:#6b21a8;padding:1px 5px;border-radius:4px;font-weight:500}
+.ent-neg{text-decoration:line-through;color:#94a3b8}
+
+/* INSIGHTS */
+.insight-group{margin-bottom:18px}
+.insight-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.no-data{font-size:12px;color:#94a3b8;font-style:italic}
+.dx-card{border:1px solid #e2e8f0;border-radius:8px;padding:10px 12px;margin-bottom:6px;animation:fadeIn .25s}
+.dx-card.top{border-color:#bbf7d0;background:#f0fdf4}
+.dx-header{display:flex;justify-content:space-between;align-items:flex-start}
+.dx-name{font-weight:600;font-size:13px}
+.dx-icd{font-family:monospace;font-size:11px;color:#94a3b8;margin-left:6px}
+.dx-conf{font-size:11px;color:#fff;padding:2px 8px;border-radius:999px;font-weight:700}
+.dx-conf.high{background:#16a34a}
+.dx-conf.med{background:#64748b}
+.dx-match{font-size:11px;color:#64748b;margin-top:3px}
+.warn-card{border:1px solid;border-radius:8px;padding:10px 12px;margin-bottom:6px;animation:fadeIn .25s}
+.warn-card.severe{border-color:#fca5a5;background:#fef2f2;color:#7f1d1d}
+.warn-card.mild{border-color:#fde68a;background:#fffbeb;color:#78350f}
+.warn-card-title{font-weight:600;font-size:12px;margin-bottom:3px}
+.warn-card-body{font-size:11px}
+
+/* PRESCRIPTION PANEL */
+.rx-panel{background:#fff;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,.06);display:flex;flex-direction:column;overflow:hidden}
+.rx-header{padding:12px 16px;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between}
+.rx-title{font-weight:700;color:#0f172a;font-size:14px}
+.rx-draft-badge{background:#fef9c3;color:#a16207;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700}
+.rx-body{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:16px}
+.rx-group label{font-size:10px;font-weight:700;text-transform:uppercase;color:#94a3b8;display:block;margin-bottom:6px}
+.rx-dx-placeholder{font-size:12px;color:#94a3b8;font-style:italic}
+.rx-dx-entry{display:flex;align-items:center;justify-content:space-between;background:#eff6ff;border:1px solid #bfdbfe;border-radius:6px;padding:8px 10px;animation:fadeIn .2s}
+.rx-dx-name{font-weight:600;font-size:13px}
+.rx-dx-icd{font-family:monospace;font-size:11px;color:#94a3b8;margin-left:6px}
+.rx-dx-badge{font-size:11px;color:#2563eb}
+.rx-med-card{border:1px solid #bbf7d0;background:#f0fdf4;border-radius:8px;padding:10px 12px;margin-bottom:6px;animation:fadeIn .2s}
+.rx-med-top{display:flex;justify-content:space-between;align-items:flex-start}
+.rx-med-name{font-weight:600;font-size:13px;text-transform:capitalize}
+.rx-med-sub{font-size:11px;color:#475569;margin-top:3px}
+.rx-med-badge{font-size:11px;color:#16a34a;margin-top:3px}
+.rx-med-remove{background:none;border:none;color:#94a3b8;cursor:pointer;font-size:16px;line-height:1;padding:0 4px}
+.rx-med-remove:hover{color:#ef4444}
+.rx-vital-row{display:flex;justify-content:space-between;background:#eff6ff;border:1px solid #bfdbfe;border-radius:6px;padding:6px 10px;margin-bottom:4px;font-size:12px;animation:fadeIn .2s}
+.rx-vital-key{font-weight:600}
+.rx-advice{width:100%;border:1px solid #e2e8f0;border-radius:8px;padding:10px 12px;font-size:13px;resize:none;color:#1e293b}
+.rx-advice:focus{border-color:#93c5fd}
+.rx-followup{display:flex;gap:8px}
+.rx-followup input,.rx-followup select{flex:1;border:1px solid #e2e8f0;border-radius:8px;padding:8px 10px;font-size:13px}
+.rx-footer{border-top:1px solid #e2e8f0;padding:12px;background:#f8fafc}
+.rx-summary{font-size:11px;color:#94a3b8;margin-bottom:8px}
+.btn-approve{width:100%;padding:12px;background:#1d4ed8;color:#fff;border-radius:8px;font-size:13px;font-weight:700;border:none;cursor:pointer;transition:background .15s}
+.btn-approve:hover{background:#1e40af}
+
+/* APPROVAL MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:50;display:flex;align-items:center;justify-content:center;padding:16px}
+.modal{background:#fff;border-radius:14px;width:100%;max-width:820px;max-height:90vh;overflow:hidden;display:flex;flex-direction:column}
+.modal-header{padding:16px 24px;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center}
+.modal-title{font-weight:700;font-size:16px}
+.modal-close{background:none;border:none;font-size:24px;color:#94a3b8;cursor:pointer;line-height:1}
+.modal-close:hover{color:#475569}
+.modal-body{flex:1;overflow-y:auto;padding:24px;background:#f1f5f9}
+.rx-paper{background:#fff;max-width:680px;margin:0 auto;padding:32px;box-shadow:0 4px 24px rgba(0,0,0,.1);min-height:520px}
+.rx-paper-header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #1d4ed8;padding-bottom:14px;margin-bottom:14px}
+.rx-paper-hospital{font-size:20px;font-weight:800;color:#1d4ed8}
+.rx-paper-hsub{font-size:11px;color:#64748b;margin-top:2px}
+.rx-paper-doctor{text-align:right;font-size:11px;color:#475569}
+.rx-paper-doctor strong{display:block;font-size:13px;color:#0f172a}
+.rx-paper-meta{display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:11px;padding-bottom:10px;border-bottom:1px solid #e2e8f0;margin-bottom:12px}
+.rx-paper-meta span:first-child{color:#94a3b8}
+.rx-section-label{font-size:10px;font-weight:700;text-transform:uppercase;color:#94a3b8;margin-bottom:6px;margin-top:12px}
+.rx-med-table{width:100%;border-collapse:collapse;font-size:12px}
+.rx-med-table th{text-align:left;padding:4px 0;border-bottom:1px solid #cbd5e1;color:#475569;font-weight:600}
+.rx-med-table td{padding:6px 0;border-bottom:1px solid #f1f5f9;text-transform:capitalize}
+.rx-paper-footer{display:flex;justify-content:space-between;align-items:flex-end;margin-top:24px}
+.rx-qr{width:70px;height:70px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;font-size:9px;color:#94a3b8;margin-top:8px}
+.rx-sig{text-align:right;font-size:11px}
+.rx-sig-cursive{font-size:22px;color:#1d4ed8;font-family:Georgia,serif;font-style:italic;margin-bottom:4px}
+.rx-sig-line{border-top:1px solid #cbd5e1;padding-top:4px;color:#0f172a;font-weight:600}
+.rx-sig-sub{color:#94a3b8;margin-top:2px}
+.modal-footer{padding:14px 24px;border-top:1px solid #e2e8f0;background:#fff;display:flex;justify-content:space-between;align-items:center}
+.btn-outline-blue{background:#fff;border:1px solid #1d4ed8;color:#1d4ed8;padding:9px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer}
+.btn-outline-blue:hover{background:#eff6ff}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;right:24px;background:#16a34a;color:#fff;padding:14px 20px;border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,.18);z-index:60}
+.toast-title{font-weight:700;font-size:14px}
+.toast-sub{font-size:12px;margin-top:3px;opacity:.85}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="header-brand">
+    <div class="header-logo">M</div>
+    <div>
+      <div class="header-title">MediScribe</div>
+      <div class="header-sub">Apollo Hospitals · OPD Block B</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="header-doctor"><span style="color:#94a3b8">Dr.</span> <strong>Priya Sharma</strong> <span style="color:#94a3b8"> · Internal Medicine</span></div>
+    <div class="header-queue">Queue: <b>14</b> waiting</div>
+    <div class="avatar">PS</div>
+  </div>
+</header>
+
+<!-- TOOLBAR -->
+<div class="toolbar">
+  <div class="toolbar-left">
+    <div class="rec-indicator" id="recIndicator">
+      <div class="rec-dot" id="recDot"></div>
+      <span class="rec-label" id="recLabel">IDLE</span>
+    </div>
+    <div class="timer" id="timer">00:00</div>
+    <div class="mic-bars" id="micBars">
+      <span class="mic-bar" style="height:4px"></span>
+      <span class="mic-bar" style="height:8px"></span>
+      <span class="mic-bar" style="height:12px"></span>
+      <span class="mic-bar" style="height:16px"></span>
+      <span class="mic-bar" style="height:12px"></span>
+      <span class="mic-bar" style="height:8px"></span>
+      <span class="mic-bar" style="height:4px"></span>
+    </div>
+    <select class="lang-select" id="langSelect">
+      <option value="en-IN">English (India)</option>
+      <option value="hi-IN">Hindi</option>
+      <option value="en-US">English (US)</option>
+      <option value="ta-IN">Tamil</option>
+      <option value="te-IN">Telugu</option>
+      <option value="mr-IN">Marathi</option>
+      <option value="bn-IN">Bengali</option>
+    </select>
+  </div>
+  <div class="toolbar-right">
+    <button class="btn btn-red" id="startBtn" onclick="startRec()">● Start Recording</button>
+    <button class="btn btn-slate hidden" id="pauseBtn" onclick="pauseRec()">Pause</button>
+    <button class="btn btn-dark hidden" id="stopBtn" onclick="stopRec()">Stop</button>
+    <button class="btn btn-slate" onclick="clearAll()">Clear</button>
+    <button class="btn btn-green" onclick="openApproval()">Approve and Send</button>
+  </div>
+</div>
+
+<!-- BROWSER WARNING -->
+<div class="warn-banner hidden" id="browserWarn">
+  Live speech recognition requires <b>Chrome</b> or <b>Edge</b> desktop browser with microphone permission.
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- LEFT SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-section">
+      <div class="patient-header">
+        <div class="patient-avatar">RK</div>
+        <div>
+          <div class="patient-name">Rajesh Kumar</div>
+          <div class="patient-meta">54 y · Male · O+</div>
+        </div>
+      </div>
+      <div class="patient-ids">
+        <div class="patient-id-row"><span>UHID</span><span>APL-2048-7291</span></div>
+        <div class="patient-id-row"><span>ABHA</span><span>91-4823-9021-4455</span></div>
+        <div class="patient-id-row"><span>Phone</span><span>+91 98•••• 4321</span></div>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="section-label">Vitals (nurse, 10 min ago)</div>
+      <div class="vitals-grid">
+        <div class="vital-chip warn"><div class="vital-chip-label warn">BP</div><div class="vital-chip-val">148/94 ↑</div></div>
+        <div class="vital-chip"><div class="vital-chip-label">Pulse</div><div class="vital-chip-val">88 bpm</div></div>
+        <div class="vital-chip"><div class="vital-chip-label">SpO2</div><div class="vital-chip-val">97%</div></div>
+        <div class="vital-chip"><div class="vital-chip-label">Temp</div><div class="vital-chip-val">98.6 F</div></div>
+        <div class="vital-chip"><div class="vital-chip-label">Weight</div><div class="vital-chip-val">78 kg</div></div>
+        <div class="vital-chip"><div class="vital-chip-label">BMI</div><div class="vital-chip-val">27.1</div></div>
+      </div>
+    </div>
+
+    <div class="sidebar-section" style="padding:0">
+      <div class="allergy-box" style="border-radius:0;border:none">
+        <div class="allergy-label">⚠ Allergies</div>
+        <div class="allergy-text">Penicillin (severe rash, 2019)</div>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="section-label">Chronic Conditions</div>
+      <div class="cond-row"><span>Type 2 Diabetes</span><span class="icd-code">E11.9</span></div>
+      <div class="cond-row"><span>Hypertension</span><span class="icd-code">I10</span></div>
+      <div class="cond-row"><span>Dyslipidemia</span><span class="icd-code">E78.5</span></div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="section-label">Current Medications</div>
+      <div class="med-chip"><div class="med-chip-name">Metformin 500mg</div><div class="med-chip-sub">BID · Since 2021 · Dr. Mehta</div></div>
+      <div class="med-chip"><div class="med-chip-name">Telmisartan 40mg</div><div class="med-chip-sub">OD · Since 2022 · Dr. Sharma</div></div>
+      <div class="med-chip"><div class="med-chip-name">Atorvastatin 10mg</div><div class="med-chip-sub">OD · Since 2022 · Dr. Sharma</div></div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="section-label">Recent Visits</div>
+      <div class="visit-item"><div class="visit-title">12 Feb 2026 · Internal Med</div><div class="visit-note">Routine follow-up, HbA1c 7.8</div></div>
+      <div class="visit-item old"><div class="visit-title">04 Nov 2025 · Cardiology</div><div class="visit-note">ECG normal, BP review</div></div>
+    </div>
+  </aside>
+
+  <!-- CENTER -->
+  <div class="center">
+    <div class="tabs">
+      <button class="tab active" id="tab-transcript" onclick="showTab('transcript')">Live Transcript</button>
+      <button class="tab" id="tab-insights" onclick="showTab('insights')">AI Insights <span class="insight-badge" id="insightCount">0</span></button>
+      <button class="tab" id="tab-reference" onclick="showTab('reference')">Reference</button>
+      <div class="tab-spacer"></div>
+      <div class="asr-status">
+        <div class="asr-dot" id="asrDot"></div>
+        <span id="asrStatus">Ready</span>
+      </div>
+    </div>
+
+    <!-- TRANSCRIPT PANE -->
+    <div class="pane" id="pane-transcript">
+      <div id="transcriptFeed">
+        <div class="empty-state" id="emptyState">
+          <div class="empty-icon">🎤</div>
+          <div class="empty-title">Ready to start consultation</div>
+          <div style="font-size:12px">Click <b>Start Recording</b> and begin speaking. Try phrases like:</div>
+          <div class="empty-tips">
+            <span class="tip-chip">"Patient has pain in abdomen for two days"</span>
+            <span class="tip-chip">"BP is 140 over 90, pulse 88"</span>
+            <span class="tip-chip">"Start pantoprazole 40 mg once daily"</span>
+            <span class="tip-chip">"No vomiting, no swelling observed"</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- INSIGHTS PANE -->
+    <div class="pane hidden" id="pane-insights">
+      <div class="insight-group">
+        <div class="section-label">Detected Symptoms <span id="symCount">(0)</span></div>
+        <div class="insight-chips" id="symList"><span class="no-data">None detected yet. Start speaking.</span></div>
+      </div>
+      <div class="insight-group">
+        <div class="section-label">Detected Vitals <span id="vitCount">(0)</span></div>
+        <div class="insight-chips" id="vitList"><span class="no-data">None detected yet.</span></div>
+      </div>
+      <div class="insight-group">
+        <div class="section-label">Detected Medications <span id="medCount">(0)</span></div>
+        <div class="insight-chips" id="medList"><span class="no-data">None detected yet.</span></div>
+      </div>
+      <div class="insight-group hidden" id="dxSection">
+        <div class="section-label">Differential Diagnosis</div>
+        <div id="dxList"></div>
+      </div>
+      <div class="insight-group hidden" id="warnSection">
+        <div class="section-label" style="color:#b45309">⚠ Alerts</div>
+        <div id="warnList"></div>
+      </div>
+    </div>
+
+    <!-- REFERENCE PANE -->
+    <div class="pane hidden" id="pane-reference">
+      <div class="no-data">Search similar cases in your department</div>
+      <input type="text" style="width:100%;margin-top:10px;border:1px solid #e2e8f0;border-radius:8px;padding:9px 12px;font-size:13px" placeholder="e.g. diabetic patient with gastritis" />
+    </div>
+  </div>
+
+  <!-- RIGHT: PRESCRIPTION PANEL -->
+  <div class="rx-panel">
+    <div class="rx-header">
+      <div class="rx-title">Prescription Draft</div>
+      <div class="rx-draft-badge">DRAFT</div>
+    </div>
+    <div class="rx-body">
+      <div class="rx-group">
+        <label>Diagnosis</label>
+        <div id="dxBuilder"><div class="rx-dx-placeholder">Speak a diagnosis or let AI suggest from symptoms</div></div>
+      </div>
+      <div class="rx-group">
+        <label style="display:flex;justify-content:space-between;align-items:center">
+          Medications
+          <button style="font-size:11px;color:#2563eb;background:none;border:none;cursor:pointer">+ Add manual</button>
+        </label>
+        <div id="medBuilder"><div class="rx-dx-placeholder">Medications you mention will be auto-added here</div></div>
+      </div>
+      <div class="rx-group">
+        <label>Detected Vitals</label>
+        <div id="vitalBuilder"><div class="rx-dx-placeholder">Speak a vital like "BP 140 over 90"</div></div>
+      </div>
+      <div class="rx-group">
+        <label>General Advice</label>
+        <textarea class="rx-advice" id="adviceBox" rows="3" placeholder="Type or dictate advice..."></textarea>
+      </div>
+      <div class="rx-group">
+        <label>Follow-up</label>
+        <div class="rx-followup">
+          <input type="date" value="2026-04-28" />
+          <select><option>In-person</option><option>Teleconsult</option></select>
+        </div>
+      </div>
+    </div>
+    <div class="rx-footer">
+      <div class="rx-summary" id="rxSummary">0 medications · 0 vitals · 0 symptoms</div>
+      <button class="btn-approve" onclick="openApproval()">Review and Approve →</button>
+    </div>
+  </div>
+</div>
+
+<!-- APPROVAL MODAL -->
+<div class="modal-overlay hidden" id="approvalModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Review Prescription</div>
+      <button class="modal-close" onclick="closeApproval()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="rx-paper">
+        <div class="rx-paper-header">
+          <div>
+            <div class="rx-paper-hospital">Apollo Hospitals</div>
+            <div class="rx-paper-hsub">OPD Block B · Sarita Vihar · New Delhi 110076</div>
+            <div class="rx-paper-hsub">Reg: DMC/R/12345 · GST: 07AAACA1234B1Z5</div>
+          </div>
+          <div class="rx-paper-doctor">
+            <strong>Dr. Priya Sharma</strong>
+            MBBS, MD (Internal Medicine)<br>DMC Reg: 45678
+          </div>
+        </div>
+        <div class="rx-paper-meta">
+          <div><span>Patient:</span> <strong>Rajesh Kumar</strong></div>
+          <div><span>Date:</span> <span id="rxDate">14 Apr 2026</span></div>
+          <div><span>UHID:</span> APL-2048-7291</div>
+          <div><span>Age/Sex:</span> 54 Y / M</div>
+        </div>
+        <div class="rx-section-label">Diagnosis</div>
+        <div id="rxDx" style="font-size:13px">—</div>
+        <div class="rx-section-label" style="margin-top:14px">Rx</div>
+        <table class="rx-med-table">
+          <thead><tr><th>#</th><th>Medication</th><th>Dose</th><th>Instructions</th></tr></thead>
+          <tbody id="rxMedTable"></tbody>
+        </table>
+        <div class="rx-section-label">Vitals Recorded</div>
+        <div id="rxVitals" style="font-size:12px">—</div>
+        <div class="rx-section-label">Advice</div>
+        <div id="rxAdvice" style="font-size:12px">—</div>
+        <div class="rx-paper-footer">
+          <div>
+            <div style="font-size:11px;color:#94a3b8">Follow-up: 28 Apr 2026</div>
+            <div class="rx-qr">[QR code]</div>
+          </div>
+          <div class="rx-sig">
+            <div class="rx-sig-cursive">Priya Sharma</div>
+            <div class="rx-sig-line">Dr. Priya Sharma</div>
+            <div class="rx-sig-sub">Digitally signed</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-slate" onclick="closeApproval()">Back to edit</button>
+      <div style="display:flex;gap:8px">
+        <button class="btn-outline-blue">WhatsApp only</button>
+        <button class="btn btn-green" onclick="finalApprove()">Approve · Print · WhatsApp</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast hidden" id="toast">
+  <div class="toast-title">Prescription sent ✓</div>
+  <div class="toast-sub">Printed · WhatsApp delivered to +91 98•••• 4321</div>
+</div>
+
+<script>
+/* ============================================================
+   STATE
+============================================================ */
+const S = {
+  recognition: null,
+  running: false,
+  paused: false,
+  seconds: 0,
+  timerInterval: null,
+  audioCtx: null,
+  analyser: null,
+  micStream: null,
+  micInterval: null,
+  segments: [],
+  symptoms: new Map(),
+  vitals: new Map(),
+  medications: new Map(),
+  diagnoses: new Set()
+};
+
+/* ============================================================
+   NLP DATA
+============================================================ */
+const SYMPTOMS = [
+  'abdominal pain','chest pain','back pain','joint pain','muscle pain','sore throat',
+  'shortness of breath','loss of appetite','weight loss','weight gain','blurred vision',
+  'headache','fever','cough','vomiting','nausea','diarrhea','diarrhoea','constipation',
+  'fatigue','weakness','dizziness','swelling','swollen','rash','itching','burning',
+  'heartburn','indigestion','bloating','cramps','breathlessness','palpitations','sweating',
+  'chills','insomnia','anxiety','numbness','tingling','runny nose','congestion','wheezing',
+  'bleeding','tenderness','stiffness','pain','ache'
+];
+
+const ANATOMY = [
+  'epigastric','abdomen','abdominal','stomach','chest','back','head','throat','neck',
+  'shoulder','knee','hip','elbow','liver','kidney','heart','lung','lungs','eye','ear'
+];
+
+const MEDICATIONS = [
+  'paracetamol','ibuprofen','aspirin','amoxicillin','azithromycin','ciprofloxacin','metformin',
+  'telmisartan','amlodipine','atorvastatin','pantoprazole','omeprazole','ranitidine','sucralfate',
+  'metronidazole','doxycycline','cetirizine','levocetirizine','montelukast','salbutamol',
+  'insulin','glimepiride','losartan','enalapril','clopidogrel','furosemide','prednisolone',
+  'dexamethasone','tramadol','diclofenac','ondansetron','domperidone','crocin','dolo','combiflam',
+  'augmentin','pan','razo','rantac'
+];
+
+const FREQ_MAP = {
+  'once daily':'OD','once a day':'OD','one time':'OD',
+  'twice daily':'BID','twice a day':'BID','two times':'BID',
+  'three times':'TID','thrice daily':'TID','three times a day':'TID',
+  'four times':'QID','four times a day':'QID',
+  'at bedtime':'HS','before bed':'HS',
+  'as needed':'SOS','when needed':'SOS'
+};
+
+const NEGATIONS = ['no ','not ','without ','denies ','negative for ',"don't ","doesn't "];
+
+const DX_RULES = [
+  {dx:'Acute Gastritis',icd:'K29.7',match:['abdominal pain','pain','burning','heartburn','nausea','stomach'],min:2},
+  {dx:'Upper Respiratory Infection',icd:'J06.9',match:['cough','sore throat','runny nose','congestion','fever'],min:2},
+  {dx:'Hypertension (uncontrolled)',icd:'I10',match:['headache','dizziness','palpitations'],min:0,vitalCheck:'BP'},
+  {dx:'Viral Fever',icd:'B34.9',match:['fever','fatigue','weakness','headache','muscle pain'],min:2},
+  {dx:'Gastroenteritis',icd:'A09',match:['vomiting','diarrhea','abdominal pain','nausea','cramps'],min:2},
+  {dx:'Migraine',icd:'G43.9',match:['headache','nausea','blurred vision','dizziness'],min:2},
+  {dx:'Asthma Exacerbation',icd:'J45.9',match:['wheezing','shortness of breath','breathlessness','cough'],min:2},
+  {dx:'Musculoskeletal Pain',icd:'M79.1',match:['back pain','joint pain','muscle pain','stiffness'],min:1}
+];
+
+/* ============================================================
+   NLP PARSE
+============================================================ */
+function parseText(text) {
+  const lower = text.toLowerCase();
+  const found = {symptoms:[],medications:[],vitals:[]};
+
+  const bp = lower.match(/(?:bp|blood pressure)\s*(?:is\s*)?(\d{2,3})\s*(?:over|\/|by)\s*(\d{2,3})/);
+  if (bp) found.vitals.push({type:'BP',value:`${bp[1]}/${bp[2]}`});
+
+  const pulse = lower.match(/(?:pulse|heart rate|hr)\s*(?:is\s*)?(\d{2,3})/);
+  if (pulse) found.vitals.push({type:'Pulse',value:`${pulse[1]} bpm`});
+
+  const temp = lower.match(/(?:temperature|temp|fever of)\s*(?:is\s*)?(\d{2,3}(?:\.\d)?)/);
+  if (temp) found.vitals.push({type:'Temp',value:`${temp[1]}°`});
+
+  const spo2 = lower.match(/(?:spo2|saturation|oxygen)\s*(?:is\s*)?(\d{2,3})/);
+  if (spo2) found.vitals.push({type:'SpO2',value:`${spo2[1]}%`});
+
+  const sugar = lower.match(/(?:sugar|glucose|blood sugar)\s*(?:is\s*)?(\d{2,4})/);
+  if (sugar) found.vitals.push({type:'Sugar',value:`${sugar[1]} mg/dL`});
+
+  const sortedSyms = [...SYMPTOMS].sort((a,b)=>b.length-a.length);
+  const taken = new Set();
+  sortedSyms.forEach(s => {
+    const idx = lower.indexOf(s);
+    if (idx === -1) return;
+    for (let i=idx;i<idx+s.length;i++) if(taken.has(i)) return;
+    for (let i=idx;i<idx+s.length;i++) taken.add(i);
+    const before = lower.substring(Math.max(0,idx-20),idx);
+    if (!NEGATIONS.some(n=>before.includes(n))) found.symptoms.push(s);
+  });
+
+  MEDICATIONS.forEach(m => {
+    const re = new RegExp(`\\b${m}\\b\\s*(\\d+(?:\\.\\d+)?)?\\s*(mg|mcg|g|ml|iu)?`,'i');
+    const match = lower.match(re);
+    if (match) {
+      const strength = match[1]&&match[2] ? `${match[1]} ${match[2]}` : '';
+      let freq = '';
+      for (const [k,v] of Object.entries(FREQ_MAP)) if (lower.includes(k)){freq=v;break;}
+      found.medications.push({name:m,strength,frequency:freq});
+    }
+  });
+
+  return found;
+}
+
+/* ============================================================
+   HIGHLIGHTING
+============================================================ */
+function esc(s){return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+
+function highlightText(text) {
+  const lower = text.toLowerCase();
+  const marks = [];
+
+  SYMPTOMS.sort((a,b)=>b.length-a.length).forEach(s => {
+    let idx=lower.indexOf(s);
+    while(idx!==-1){
+      const before=lower.substring(Math.max(0,idx-20),idx);
+      const neg=NEGATIONS.some(n=>before.includes(n));
+      marks.push({start:idx,end:idx+s.length,cls:neg?'ent-neg':'ent-sym',p:3});
+      idx=lower.indexOf(s,idx+s.length);
+    }
+  });
+
+  MEDICATIONS.forEach(m => {
+    const re=new RegExp(`\\b${m}\\b`,'gi');
+    let match;
+    while((match=re.exec(lower))!==null)
+      marks.push({start:match.index,end:match.index+m.length,cls:'ent-med',p:4});
+  });
+
+  ANATOMY.forEach(a => {
+    const re=new RegExp(`\\b${a}\\b`,'gi');
+    let match;
+    while((match=re.exec(lower))!==null)
+      marks.push({start:match.index,end:match.index+a.length,cls:'ent-anat',p:1});
+  });
+
+  const bpRe=/(?:bp|blood pressure)\s*(?:is\s*)?\d{2,3}\s*(?:over|\/|by)\s*\d{2,3}/gi;
+  let m;
+  while((m=bpRe.exec(text))!==null)
+    marks.push({start:m.index,end:m.index+m[0].length,cls:'ent-vit',p:5});
+
+  marks.sort((a,b)=>a.start-b.start||b.p-a.p);
+  const clean=[];let lastEnd=-1;
+  for(const mk of marks) if(mk.start>=lastEnd){clean.push(mk);lastEnd=mk.end;}
+
+  if(!clean.length) return esc(text);
+  let result='',cursor=0;
+  for(const mk of clean){
+    result+=esc(text.substring(cursor,mk.start));
+    result+=`<span class="${mk.cls}">${esc(text.substring(mk.start,mk.end))}</span>`;
+    cursor=mk.end;
+  }
+  return result+esc(text.substring(cursor));
+}
+
+/* ============================================================
+   TRANSCRIPT
+============================================================ */
+let interimEl=null;
+
+function addSegment(text) {
+  if(!text.trim()) return;
+  removeInterim();
+  document.getElementById('emptyState')?.remove();
+
+  const ts=fmt(S.seconds);
+  const feed=document.getElementById('transcriptFeed');
+  const el=document.createElement('div');
+  el.className='seg';
+  el.innerHTML=`<div class="seg-ts">${ts}</div><div class="seg-body"><div class="speaker">Doctor:</div><div class="text">${highlightText(text)}</div></div>`;
+  feed.appendChild(el);
+  document.getElementById('pane-transcript').scrollTop=99999;
+
+  const parsed=parseText(text);
+  parsed.symptoms.forEach(s=>S.symptoms.set(s,(S.symptoms.get(s)||0)+1));
+  parsed.vitals.forEach(v=>S.vitals.set(v.type,v));
+  parsed.medications.forEach(m=>S.medications.set(m.name,{...(S.medications.get(m.name)||{}),...m}));
+
+  updateInsights();
+  updatePrescription();
+  runDx();
+  checkWarnings();
+}
+
+function showInterim(text) {
+  document.getElementById('emptyState')?.remove();
+  const feed=document.getElementById('transcriptFeed');
+  if(!interimEl){interimEl=document.createElement('div');interimEl.className='seg';feed.appendChild(interimEl);}
+  interimEl.innerHTML=`<div class="seg-ts">${fmt(S.seconds)}</div><div class="seg-body"><div class="speaker">Doctor:</div><div class="text interim">${esc(text)}▋</div></div>`;
+  document.getElementById('pane-transcript').scrollTop=99999;
+}
+
+function removeInterim(){if(interimEl){interimEl.remove();interimEl=null;}}
+
+/* ============================================================
+   INSIGHTS UPDATE
+============================================================ */
+function updateInsights() {
+  const symEl=document.getElementById('symList');
+  symEl.innerHTML=S.symptoms.size
+    ? [...S.symptoms.keys()].map(s=>`<span class="ent-sym" style="font-size:12px">${s}</span>`).join('')
+    : '<span class="no-data">None detected yet.</span>';
+  document.getElementById('symCount').textContent=`(${S.symptoms.size})`;
+
+  const vitEl=document.getElementById('vitList');
+  vitEl.innerHTML=S.vitals.size
+    ? [...S.vitals.values()].map(v=>`<span class="ent-vit" style="font-size:12px">${v.type}: ${v.value}</span>`).join('')
+    : '<span class="no-data">None detected yet.</span>';
+  document.getElementById('vitCount').textContent=`(${S.vitals.size})`;
+
+  const medEl=document.getElementById('medList');
+  medEl.innerHTML=S.medications.size
+    ? [...S.medications.values()].map(m=>{
+        const p=[m.name];if(m.strength)p.push(m.strength);if(m.frequency)p.push(m.frequency);
+        return `<span class="ent-med" style="font-size:12px;text-transform:capitalize">${p.join(' · ')}</span>`;
+      }).join('')
+    : '<span class="no-data">None detected yet.</span>';
+  document.getElementById('medCount').textContent=`(${S.medications.size})`;
+
+  document.getElementById('insightCount').textContent=S.symptoms.size+S.vitals.size+S.medications.size;
+}
+
+/* ============================================================
+   PRESCRIPTION UPDATE
+============================================================ */
+function updatePrescription() {
+  const mb=document.getElementById('medBuilder');
+  mb.innerHTML=S.medications.size
+    ? [...S.medications.values()].map(m=>{
+        const parts=[];if(m.strength)parts.push(m.strength);if(m.frequency)parts.push(m.frequency);
+        return `<div class="rx-med-card">
+          <div class="rx-med-top">
+            <div><div class="rx-med-name">${m.name}</div>
+              <div class="rx-med-sub">${parts.join(' · ')||'Click to edit dose'}</div>
+              <div class="rx-med-badge">✨ Auto-detected from speech</div>
+            </div>
+            <button class="rx-med-remove" onclick="removeMed('${m.name}')">✕</button>
+          </div></div>`;
+      }).join('')
+    : '<div class="rx-dx-placeholder">Medications you mention will be auto-added here</div>';
+
+  const vb=document.getElementById('vitalBuilder');
+  vb.innerHTML=S.vitals.size
+    ? [...S.vitals.values()].map(v=>`<div class="rx-vital-row"><span class="rx-vital-key">${v.type}</span><span>${v.value}</span></div>`).join('')
+    : '<div class="rx-dx-placeholder">Speak a vital like "BP 140 over 90"</div>';
+
+  document.getElementById('rxSummary').textContent=`${S.medications.size} medications · ${S.vitals.size} vitals · ${S.symptoms.size} symptoms`;
+}
+
+function removeMed(name){S.medications.delete(name);updateInsights();updatePrescription();checkWarnings();}
+
+/* ============================================================
+   DIAGNOSIS ENGINE
+============================================================ */
+function runDx() {
+  const syms=[...S.symptoms.keys()];
+  const vits=[...S.vitals.keys()];
+  const results=[];
+
+  DX_RULES.forEach(rule=>{
+    const matched=rule.match.filter(m=>syms.includes(m)).length;
+    let bonus=rule.vitalCheck&&vits.includes(rule.vitalCheck)?30:0;
+    if(matched>=rule.min&&(matched>0||bonus>0)){
+      results.push({...rule,conf:Math.min(95,35+matched*15+bonus),matchedCount:matched});
+    }
+  });
+  results.sort((a,b)=>b.conf-a.conf);
+  const top=results.slice(0,3);
+
+  const sec=document.getElementById('dxSection');
+  if(!top.length){sec.classList.add('hidden');S.diagnoses.clear();document.getElementById('dxBuilder').innerHTML='<div class="rx-dx-placeholder">Speak a diagnosis or let AI suggest from symptoms</div>';return;}
+
+  sec.classList.remove('hidden');
+  document.getElementById('dxList').innerHTML=top.map((r,i)=>`
+    <div class="dx-card${i===0?' top':''}">
+      <div class="dx-header">
+        <div><span class="dx-name">${r.dx}</span><span class="dx-icd">${r.icd}</span></div>
+        <span class="dx-conf ${i===0?'high':'med'}">${r.conf}%</span>
+      </div>
+      <div class="dx-match">Matched ${r.matchedCount} symptom indicator${r.matchedCount!==1?'s':''}</div>
+    </div>`).join('');
+
+  S.diagnoses=new Set([`${top[0].dx} (${top[0].icd})`]);
+  document.getElementById('dxBuilder').innerHTML=`
+    <div class="rx-dx-entry">
+      <div><span class="rx-dx-name">${top[0].dx}</span><span class="rx-dx-icd">${top[0].icd}</span></div>
+      <span class="rx-dx-badge">AI · ${top[0].conf}%</span>
+    </div>`;
+}
+
+/* ============================================================
+   WARNINGS
+============================================================ */
+function checkWarnings() {
+  const warnings=[];
+  const penicillinClass=['amoxicillin','augmentin','ampicillin'];
+  [...S.medications.keys()].forEach(m=>{
+    if(penicillinClass.includes(m)) warnings.push({level:'severe',title:`⛔ ALLERGY ALERT: ${m}`,body:'Patient is allergic to Penicillin (severe rash, 2019). Do not prescribe this medication.'});
+  });
+  if(S.medications.has('pantoprazole')||S.medications.has('omeprazole')||S.medications.has('pan'))
+    warnings.push({level:'mild',title:'Drug interaction: PPI + Metformin',body:'Patient is on long-term metformin. PPIs may reduce vitamin B12 absorption. Monitor B12 every 6 months.'});
+
+  const sec=document.getElementById('warnSection');
+  if(!warnings.length){sec.classList.add('hidden');return;}
+  sec.classList.remove('hidden');
+  document.getElementById('warnList').innerHTML=warnings.map(w=>`
+    <div class="warn-card ${w.level}">
+      <div class="warn-card-title">${w.title}</div>
+      <div class="warn-card-body">${w.body}</div>
+    </div>`).join('');
+}
+
+/* ============================================================
+   SPEECH RECOGNITION
+============================================================ */
+function initRecognition() {
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){document.getElementById('browserWarn').classList.remove('hidden');return null;}
+  const r=new SR();
+  r.continuous=true;
+  r.interimResults=true;
+  r.lang=document.getElementById('langSelect').value;
+  r.onresult=e=>{
+    let interim='';
+    for(let i=e.resultIndex;i<e.results.length;i++){
+      if(e.results[i].isFinal) addSegment(e.results[i][0].transcript.trim());
+      else interim+=e.results[i][0].transcript;
+    }
+    if(interim) showInterim(interim);
+  };
+  r.onerror=e=>{
+    if(e.error==='no-speech') setAsrStatus('No audio','amber');
+    else if(e.error==='not-allowed'||e.error==='service-not-allowed'){
+      setAsrStatus('Mic denied','red');
+      alert('Microphone access was denied.\n\nTo fix:\n1. Click the 🔒 icon in your browser address bar\n2. Set Microphone to "Allow"\n3. Reload the page\n\nNote: This app only works in Chrome or Edge desktop browser.');
+    } else if(e.error!=='aborted') setAsrStatus('Error: '+e.error,'red');
+  };
+  r.onend=()=>{if(S.running&&!S.paused) try{r.start();}catch(err){}};
+  return r;
+}
+
+/* ============================================================
+   MIC METER
+============================================================ */
+async function startMicMeter() {
+  try {
+    S.micStream=await navigator.mediaDevices.getUserMedia({audio:true});
+    S.audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+    const src=S.audioCtx.createMediaStreamSource(S.micStream);
+    S.analyser=S.audioCtx.createAnalyser();
+    S.analyser.fftSize=256;
+    src.connect(S.analyser);
+    const data=new Uint8Array(S.analyser.frequencyBinCount);
+    const bars=document.querySelectorAll('#micBars .mic-bar');
+    document.getElementById('micBars').classList.add('active');
+    S.micInterval=setInterval(()=>{
+      S.analyser.getByteFrequencyData(data);
+      const avg=data.reduce((a,b)=>a+b,0)/data.length;
+      bars.forEach((bar,i)=>{bar.style.height=Math.max(4,Math.min(24,(avg/128)*(24-Math.abs(i-3)*3)))+'px';});
+    },80);
+  } catch(err){console.log('Mic meter:',err);}
+}
+
+function stopMicMeter() {
+  if(S.micInterval){clearInterval(S.micInterval);S.micInterval=null;}
+  if(S.micStream){S.micStream.getTracks().forEach(t=>t.stop());S.micStream=null;}
+  if(S.audioCtx){S.audioCtx.close();S.audioCtx=null;}
+  document.getElementById('micBars').classList.remove('active');
+  document.querySelectorAll('#micBars .mic-bar').forEach(b=>b.style.height='4px');
+}
+
+/* ============================================================
+   RECORDING CONTROLS
+============================================================ */
+function setAsrStatus(text,color) {
+  document.getElementById('asrStatus').textContent=text;
+  const dot=document.getElementById('asrDot');
+  dot.style.background={green:'#22c55e',amber:'#f59e0b',red:'#ef4444',slate:'#cbd5e1'}[color]||'#cbd5e1';
+}
+
+function setRecState(state) {
+  const dot=document.getElementById('recDot');
+  const label=document.getElementById('recLabel');
+  dot.className='rec-dot';label.className='rec-label';
+  if(state==='recording'){dot.classList.add('recording');label.classList.add('recording');label.textContent='RECORDING';}
+  else if(state==='paused'){dot.classList.add('paused');label.classList.add('paused');label.textContent='PAUSED';}
+  else if(state==='stopped'){label.textContent='STOPPED';}
+  else{label.textContent='IDLE';}
+}
+
+function startRec() {
+  if(!S.recognition){
+    S.recognition=initRecognition();
+    if(!S.recognition) return;
+  }
+  S.recognition.lang=document.getElementById('langSelect').value;
+  try{S.recognition.start();}catch(err){}
+  S.running=true;S.paused=false;
+  startMicMeter();
+  if(!S.timerInterval) S.timerInterval=setInterval(()=>{if(!S.paused){S.seconds++;document.getElementById('timer').textContent=fmt(S.seconds);}},1000);
+  document.getElementById('startBtn').classList.add('hidden');
+  document.getElementById('pauseBtn').classList.remove('hidden');
+  document.getElementById('stopBtn').classList.remove('hidden');
+  setRecState('recording');setAsrStatus('Listening','green');
+}
+
+function pauseRec() {
+  const btn=document.getElementById('pauseBtn');
+  if(S.paused){
+    S.paused=false;
+    try{S.recognition.start();}catch(err){}
+    startMicMeter();
+    btn.textContent='Pause';setRecState('recording');setAsrStatus('Listening','green');
+  } else {
+    S.paused=true;
+    try{S.recognition.stop();}catch(err){}
+    stopMicMeter();
+    btn.textContent='Resume';setRecState('paused');setAsrStatus('Paused','amber');
+  }
+}
+
+function stopRec() {
+  S.running=false;S.paused=false;
+  try{S.recognition.stop();}catch(err){}
+  stopMicMeter();
+  if(S.timerInterval){clearInterval(S.timerInterval);S.timerInterval=null;}
+  document.getElementById('startBtn').classList.remove('hidden');
+  document.getElementById('pauseBtn').classList.add('hidden');
+  document.getElementById('stopBtn').classList.add('hidden');
+  document.getElementById('pauseBtn').textContent='Pause';
+  setRecState('stopped');setAsrStatus('Stopped','slate');
+}
+
+function clearAll() {
+  if(!confirm('Clear all transcript and detected entities?')) return;
+  S.segments=[];S.symptoms.clear();S.vitals.clear();S.medications.clear();S.diagnoses.clear();
+  S.seconds=0;document.getElementById('timer').textContent='00:00';
+  document.getElementById('transcriptFeed').innerHTML=`
+    <div class="empty-state" id="emptyState">
+      <div class="empty-icon">🎤</div>
+      <div class="empty-title">Ready to start consultation</div>
+      <div style="font-size:12px">Click <b>Start Recording</b> and begin speaking.</div>
+    </div>`;
+  updateInsights();updatePrescription();
+  document.getElementById('dxSection').classList.add('hidden');
+  document.getElementById('warnSection').classList.add('hidden');
+  document.getElementById('dxBuilder').innerHTML='<div class="rx-dx-placeholder">Speak a diagnosis or let AI suggest from symptoms</div>';
+}
+
+/* ============================================================
+   TABS
+============================================================ */
+function showTab(name) {
+  ['transcript','insights','reference'].forEach(t=>{
+    document.getElementById('pane-'+t).classList.add('hidden');
+    document.getElementById('tab-'+t).classList.remove('active');
+  });
+  document.getElementById('pane-'+name).classList.remove('hidden');
+  document.getElementById('tab-'+name).classList.add('active');
+}
+
+/* ============================================================
+   APPROVAL MODAL
+============================================================ */
+function openApproval() {
+  document.getElementById('rxDate').textContent=new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+  document.getElementById('rxDx').textContent=S.diagnoses.size?[...S.diagnoses].join(', '):'—';
+  const tbody=document.getElementById('rxMedTable');
+  tbody.innerHTML=S.medications.size
+    ? [...S.medications.values()].map((m,i)=>`<tr><td>${i+1}</td><td style="text-transform:capitalize">${m.name}</td><td>${m.strength||'—'}</td><td>${m.frequency||'As directed'}</td></tr>`).join('')
+    : '<tr><td colspan="4" style="color:#94a3b8;font-style:italic;padding:8px 0">No medications added</td></tr>';
+  document.getElementById('rxVitals').textContent=S.vitals.size?[...S.vitals.values()].map(v=>`${v.type}: ${v.value}`).join(' · '):'—';
+  document.getElementById('rxAdvice').textContent=document.getElementById('adviceBox').value.trim()||'Adequate rest, avoid spicy food, follow up if symptoms persist.';
+  document.getElementById('approvalModal').classList.remove('hidden');
+}
+
+function closeApproval(){document.getElementById('approvalModal').classList.add('hidden');}
+
+function finalApprove() {
+  closeApproval();
+  const t=document.getElementById('toast');
+  t.classList.remove('hidden');
+  setTimeout(()=>t.classList.add('hidden'),4000);
+}
+
+/* ============================================================
+   UTILS
+============================================================ */
+function fmt(s){return `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;}
+
+/* ============================================================
+   INIT
+============================================================ */
+window.addEventListener('load',()=>{
+  if(!(window.SpeechRecognition||window.webkitSpeechRecognition))
+    document.getElementById('browserWarn').classList.remove('hidden');
+});
+</script>
+</body>
+</html>
